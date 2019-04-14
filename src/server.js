@@ -13,6 +13,9 @@ app.use(function (req, res, next) {
   console.log("connected");
   //console.log(userCount);
   userCount++;
+  aWss.clients.forEach(function (client) {
+    client.send(JSON.stringify({command: "userCount", message: userCount}));
+  });    
   return next();
 });
  
@@ -22,11 +25,6 @@ app.get('/', function(req, res, next){
 });
 
 app.ws('/', function(ws, req) {
-    ws.on('connection', function(){
-        aWss.clients.forEach(function (client) {
-            client.send(JSON.stringify({command: "userCount", message: userCount}));
-        });    
-      })
 
   ws.on('message', function(msg) {
 
