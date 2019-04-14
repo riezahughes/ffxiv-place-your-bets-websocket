@@ -1,49 +1,50 @@
 var express = require('express');
 var app = express();
 var expressWs = require('express-ws')(app);
-var aWss = expressWs.getWss('/')
+var aWss = expressWs.getWss('/');
 var userCount = 0;
 var voteTrue = 0;
 var voteFalse = 0;
 var voteFinal = "";
-var jsonParse = "";
 
 app.use(function (req, res, next) {
   //console.log('middleware');
   req.testing = 'testing';
   console.log("connected");
-  userCount ++;
-  //return next();
+  //console.log(userCount);
+  userCount++;
+  return next();
 });
  
 app.get('/', function(req, res, next){
   console.log('get route', req.testing);
-  //res.end();
+  res.end();
 });
 
 app.ws('/', function(ws, req) {
+    ws.on('connection', function(){
+        aWss.clients.forEach(function (client) {
+            client.send(JSON.stringify({command: "userCount", message: userCount}));
+        });    
+      })
 
   ws.on('message', function(msg) {
-    console.log(userCount);
-    console.log(msg);
-    console.log(JSON.stringify(msg));
-    
+
     aWss.clients.forEach(function (client) {
         client.send(JSON.stringify({command: "userCount", message: userCount}));
     });
 
-    console.log(userCount);
+    //ws.send(JSON.stringify({command: "userCount", message: userCount}));
+    msg = JSON.parse(msg);
 
-    ws.send(JSON.stringify({command: "userCount", message: userCount}));
-
-    console.log(jsonParse);
-    if(jsonParse.choice === "askQuestion"){
+    if(msg.choice === "askQuestion"){
+        voteTrue = 0;
+        voteFalse = 0;
         aWss.clients.forEach(function (client) {
-            if (client !== ws) client.send(JSON.stringify({command: "beginVote", message: "beginVote"}));
+            if (client !== ws) client.send(JSON.stringify({command: "beginVote", message: "beginVote", usermsg: msg.text}));
         });  
-        console.log("Question Asked!");
     }
-    if(jsonParse.choice === "votingEnd"){
+    if(msg.choice === "votingEnd"){
         if(voteTrue > voteFalse){
             voteFinal = true;
         }else if(voteFalse > voteTrue){
@@ -53,19 +54,14 @@ app.ws('/', function(ws, req) {
         }
         aWss.clients.forEach(function (client) {
             client.send(JSON.stringify({command: "voteCount", message: voteFinal}));
-            console.log("VOTING ENDS");
         });         
     }
 
-    if(jsonParse.choice === true){
+    if(msg.choice === true){
         voteTrue++;
-        console.log("TRUE VOTE");
-        //ws.send(JSON.stringify({command: "reset", message: "true was chosen"}));
     }
-    if(jsonParse.choice === false){
+    if(msg.choice === false){
         voteFalse++;
-        console.log("FALSE VOTE");
-        //ws.send(JSON.stringify({command: "reset", message: "false was chosen"}));
     }
     else{
         ws.send(JSON.stringify({command: false, message: "Connected"}));
