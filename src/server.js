@@ -42,17 +42,18 @@ app.ws('/', function(ws, req) {
             if (client !== ws) client.send(JSON.stringify({command: "beginVote", message: "beginVote", usermsg: msg.text}));
         });  
     }
-    if(msg.choice === "votingEnd"){
-        if(voteTrue > voteFalse){
-            voteFinal = true;
-        }else if(voteFalse > voteTrue){
-            voteFinal = false;
-        }else{
-            voteFinal = "draw";
-        }
+    if(msg.choice === "votingEndMaster"){
+        ws.send(JSON.stringify({command: "makeChoice", text: msg.text}));
+    }
+
+    if(msg.choice === "votingEndSlave"){
+        ws.send(JSON.stringify({command: "lockScreen"}));
+    }    
+
+    if(msg.choice === "finalChoice"){
         aWss.clients.forEach(function (client) {
-            client.send(JSON.stringify({command: "voteCount", message: voteFinal}));
-        });         
+            client.send(JSON.stringify({command: "finalChoice", final_choice: msg.finalChoice, true_votes: voteTrue, false_votes: voteFalse}));
+        });          
     }
 
     if(msg.choice === true){
