@@ -53,7 +53,11 @@ app.ws('/', function(ws, req) {
     if(msg.choice === "finalChoice"){
         aWss.clients.forEach(function (client) {
             client.send(JSON.stringify({command: "finalChoice", final_choice: msg.finalChoice, true_votes: voteTrue, false_votes: voteFalse}));
-        });          
+        });
+        userCount = 0;
+        voteTrue = 0;
+        voteFalse = 0;
+        voteFinal = "";
     }
 
     if(msg.choice === true){
